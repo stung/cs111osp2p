@@ -30,9 +30,19 @@ requested, also in parallel (if multiple files are requested at once).
 
 # EXERCISE 2A: What conditions did you find and fix that would have
 #    triggered a buffer overrun bug?  (~1-3 sentences each)
+1) Using a filename that was longer than FILENAMESIZ would trigger a buffer 
+overflow in start_download. Fixed using strncpy of the destination size.
+2) Not necessary in this lab, but in the event that our filename and 
+disk_filename string sizes were changed to be different, our code would catch
+another potential buffer overflow in task_download with strcpy. Fixed using 
+strncpy on the destination size.
 
 # EXERCISE 2B: What other robustness problems did you fix?  (~1-3 sentences
 #    each)
+1) Defending against large file size transfers by implementing a hard limit 
+(10MB).
+2) Defending against people searching other directories by checking for the 
+"/" character in the file name (as subdirectories are also not allowed).
 
 # EXERCISE 3: Describe the attacks you implemented for "evil mode".  Why
 #    are they attacks?  (~3-10 sentences each)
