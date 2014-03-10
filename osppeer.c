@@ -20,6 +20,7 @@
 #include <pwd.h>
 #include <time.h>
 #include <limits.h>
+#include <sys/wait.h>
 #include "md5.h"
 #include "osp2p.h"
 
@@ -691,6 +692,9 @@ int main(int argc, char *argv[])
 	const char *myalias;
 	struct passwd *pwent;
 
+	// child process for tracking parallel processes
+	pid_t child;
+
 	// Default tracker is read.cs.ucla.edu
 	osp2p_sscanf("131.179.80.139:11111", "%I:%d",
 		     &tracker_addr, &tracker_port);
@@ -760,12 +764,30 @@ int main(int argc, char *argv[])
 
 	// First, download files named on command line.
 	for (; argc > 1; argc--, argv++)
-		if ((t = start_download(tracker_task, argv[1])))
-			task_download(t, tracker_task);
+		if ((t = start_download(tracker_task, argv[1]))) {
+			child = fork();
+			if (child == 0) { // child process
+				task_download(t, tracker_task);
+				return 0;
+			} else if (child > 0) { // parent process
+				continue;
+			} else { // error
+	          message("Cannot generate child process!");
+			}
+		}
 
 	// Then accept connections from other peers and upload files to them!
-	while ((t = task_listen(listen_task)))
-		task_upload(t);
+	while ((t = task_listen(listen_task))) {
+		child = fork();
+		if (child == 0) { // child process
+			task_upload(t);
+			return 0;
+		} else if (child > 0) { // parent process
+			continue;
+		} else { // error
+          message("Cannot generate child process!");
+		}
+	}
 
 	return 0;
 }
