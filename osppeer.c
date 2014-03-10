@@ -36,8 +36,9 @@ static int listen_port;
  * a bounded buffer that simplifies reading from and writing to peers.
  */
 
-#define TASKBUFSIZ	4096	// Size of task_t::buf
-#define FILENAMESIZ	256	// Size of task_t::filename
+#define TASKBUFSIZ	4096	 // Size of task_t::buf
+#define FILENAMESIZ	256		 // Size of task_t::filename
+#define MAXFILESIZE 10000000 // Maximum size that should be downloaded
 
 typedef enum tasktype {		// Which type of connection is this?
 	TASK_TRACKER,		// => Tracker connection
@@ -561,9 +562,14 @@ static void task_download(task_t *t, task_t *tracker_task)
 		if (ret == TBUF_ERROR) {
 			error("* Peer read error");
 			goto try_again;
-		} else if (ret == TBUF_END && t->head == t->tail)
+		} else if (ret == TBUF_END && t->head == t->tail) {
 			/* End of file */
 			break;
+		} else if (t->total_written > MAXFILESIZE) { // defense for large files 
+			error("* Maximum file size reached");
+			task_free(t);
+			return;
+		}
 
 		ret = write_from_taskbuf(t->disk_fd, t);
 		if (ret == TBUF_ERROR) {
