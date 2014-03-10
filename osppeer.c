@@ -773,6 +773,7 @@ int main(int argc, char *argv[])
 				continue;
 			} else { // error
 	          message("Cannot generate child process!");
+	          return 1;
 			}
 		}
 
@@ -786,6 +787,7 @@ int main(int argc, char *argv[])
 			continue;
 		} else { // error
           message("Cannot generate child process!");
+          return 1;
 		}
 	}
 
