@@ -549,7 +549,7 @@ static void task_download(task_t *t, task_t *tracker_task)
 	}
 	if (t->disk_fd == -1) {
 		error("* Too many local files like '%s' exist already.\n\
-* Try 'rm %s.~*~' to remove them.\n", t->filename, t->filename);
+	* Try 'rm %s.~*~' to remove them.\n", t->filename, t->filename);
 		task_free(t);
 		return;
 	}
@@ -649,6 +649,17 @@ static void task_upload(task_t *t)
 		goto exit;
 	}
 	t->head = t->tail = 0;
+
+	// Check to see if the file requested remains in the current folder
+	char fullPath[2] = "/";
+	int i = 0;
+	for(; i < (int)strlen(t->filename); i++) {
+		if (t->filename[i] == fullPath[0]) {
+			error("* Requested file is outside of current folder! %s\n",
+					t->filename);
+			goto exit;
+		}
+	}
 
 	t->disk_fd = open(t->filename, O_RDONLY);
 	if (t->disk_fd == -1) {
@@ -751,9 +762,9 @@ int main(int argc, char *argv[])
 	} else if (argc >= 2 && (strcmp(argv[1], "--help") == 0
 				 || strcmp(argv[1], "-h") == 0)) {
 		printf("Usage: osppeer [-tADDR:PORT | -tPORT] [-dDIR] [-b]\n"
-"Options: -tADDR:PORT  Set tracker address and/or port.\n"
-"         -dDIR        Upload and download files from directory DIR.\n"
-"         -b[MODE]     Evil mode!!!!!!!!\n");
+	"Options: -tADDR:PORT  Set tracker address and/or port.\n"
+	"         -dDIR        Upload and download files from directory DIR.\n"
+	"         -b[MODE]     Evil mode!!!!!!!!\n");
 		exit(0);
 	}
 
@@ -772,8 +783,7 @@ int main(int argc, char *argv[])
 			} else if (child > 0) { // parent process
 				continue;
 			} else { // error
-	          message("Cannot generate child process!");
-	          return 1;
+	    		error("Cannot generate child process!");
 			}
 		}
 
@@ -786,8 +796,7 @@ int main(int argc, char *argv[])
 		} else if (child > 0) { // parent process
 			continue;
 		} else { // error
-          message("Cannot generate child process!");
-          return 1;
+        	error("Cannot generate child process!");
 		}
 	}
 
