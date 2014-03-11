@@ -478,6 +478,10 @@ task_t *start_download(task_t *tracker_task, const char *filename)
 		error("* Error while allocating task");
 		goto exit;
 	}
+	if (sizeof(filename) > FILENAMESIZ) {
+		error("* File name too large!");
+		goto exit;
+	}
 	strncpy(t->filename, filename, sizeof(t->filename));
 
 	// add peers
