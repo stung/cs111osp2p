@@ -60,7 +60,8 @@ typedef struct task {
 	int peer_fd;		// File descriptor to peer/tracker, or -1
 	int disk_fd;		// File descriptor to local file, or -1
 
-	char buf[TASKBUFSIZ];	// Bounded buffer abstraction
+	char *buf;	// Bounded buffer abstraction
+	int curBufSize; 	// current buffer size
 	unsigned head;
 	unsigned tail;
 	size_t total_written;	// Total number of bytes written
@@ -93,6 +94,8 @@ static task_t *task_new(tasktype_t type)
 	t->head = t->tail = 0;
 	t->total_written = 0;
 	t->peer_list = NULL;
+	t->buf = (char *) malloc(TASKBUFSIZ);
+	t->curBufSize = TASKBUFSIZ;
 
 	strcpy(t->filename, "");
 	strcpy(t->disk_filename, "");
@@ -134,6 +137,7 @@ static void task_free(task_t *t)
 		do {
 			task_pop_peer(t);
 		} while (t->peer_list);
+		free(t->buf);
 		free(t);
 	}
 }
@@ -161,12 +165,12 @@ typedef enum taskbufresult {		// Status of a read or write attempt.
 //	The task buffer is capped at TASKBUFSIZ.
 taskbufresult_t read_to_taskbuf(int fd, task_t *t)
 {
-	unsigned headpos = (t->head % TASKBUFSIZ);
-	unsigned tailpos = (t->tail % TASKBUFSIZ);
+	unsigned headpos = (t->head % t->curBufSize);
+	unsigned tailpos = (t->tail % t->curBufSize);
 	ssize_t amt;
 
 	if (t->head == t->tail || headpos < tailpos)
-		amt = read(fd, &t->buf[tailpos], TASKBUFSIZ - tailpos);
+		amt = read(fd, &t->buf[tailpos], t->curBufSize - tailpos);
 	else
 		amt = read(fd, &t->buf[tailpos], headpos - tailpos);
 
@@ -308,13 +312,26 @@ static size_t read_tracker_response(task_t *t)
 				}
 			}
 
+		// message("* Reading time\n");
+
 		// If not, read more data.  Note that the read will not block
 		// unless NO data is available.
 		int ret = read_to_taskbuf(t->peer_fd, t);
 		if (ret == TBUF_ERROR)
 			die("tracker read error");
-		else if (ret == TBUF_END)
+		else if (ret == TBUF_END) {
+			// char newBuf[bufSize * 2];
+			// memcpy(newBuf, t->buf, sizeof(t->buf));
+			// t->buf = newBuf;
+			char *newBuf = (char *) malloc(t->curBufSize * 2);
+			// memcpy(newBuf, t->buf, t->curBufSize);
+			t->buf = newBuf;
+			t->curBufSize = t->curBufSize * 2;
+			t->head = t->tail = 0;
+			// message("* Resize!\n");
+			continue;
 			die("tracker connection closed prematurely!\n");
+		}
 	}
 }
 

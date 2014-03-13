@@ -31,7 +31,9 @@ requested, also in parallel (if multiple files are requested at once).
 # EXERCISE 2A: What conditions did you find and fix that would have
 #    triggered a buffer overrun bug?  (~1-3 sentences each)
 1) Using a filename that was longer than FILENAMESIZ would trigger a buffer 
-overflow in start_download. Fixed using strncpy of the destination size.
+overflow in start_download. Fixed using strncpy of the destination size. Though
+the code apparently also already checks whether the filename exceeds out
+FILENAMESIZ, so this may not have been a necessary fix.
 2) Not necessary in this lab, but in the event that our filename and 
 disk_filename string sizes were changed to be different, our code would catch
 another potential buffer overflow in task_download with strcpy. Fixed using 
