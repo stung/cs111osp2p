@@ -52,6 +52,8 @@ size.
 
 # EXERCISE 3: Describe the attacks you implemented for "evil mode".  Why
 #    are they attacks?  (~3-10 sentences each)
+1) The first kind of attack we implement is trying to get a file that is not in
+the test directory that we are normally restricted to.
 
 # Extra credit problems
 #Extra credit problem: none

