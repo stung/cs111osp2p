@@ -45,6 +45,10 @@ strncpy on the destination size.
 (10MB).
 2) Defending against people searching other directories by checking for the 
 "/" character in the file name (as subdirectories are also not allowed).
+3) Dynamically resizing the task buffer size if the TASKBUFSIZ is exceeded.
+This bug fix involved changing the buffer from a fixed char size to a char 
+pointer, and adding a new data member that kept track of the current buffer
+size.
 
 # EXERCISE 3: Describe the attacks you implemented for "evil mode".  Why
 #    are they attacks?  (~3-10 sentences each)

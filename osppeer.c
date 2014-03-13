@@ -193,8 +193,8 @@ taskbufresult_t read_to_taskbuf(int fd, task_t *t)
 //	techniques and identical return values as read_to_taskbuf.
 taskbufresult_t write_from_taskbuf(int fd, task_t *t)
 {
-	unsigned headpos = (t->head % TASKBUFSIZ);
-	unsigned tailpos = (t->tail % TASKBUFSIZ);
+	unsigned headpos = (t->head % t->curBufSize);
+	unsigned tailpos = (t->tail % t->curBufSize);
 	ssize_t amt;
 
 	if (t->head == t->tail)
@@ -202,7 +202,7 @@ taskbufresult_t write_from_taskbuf(int fd, task_t *t)
 	else if (headpos < tailpos)
 		amt = write(fd, &t->buf[headpos], tailpos - headpos);
 	else
-		amt = write(fd, &t->buf[headpos], TASKBUFSIZ - headpos);
+		amt = write(fd, &t->buf[headpos], t->curBufSize - headpos);
 
 	if (amt == -1 && (errno == EINTR || errno == EAGAIN
 			  || errno == EWOULDBLOCK))
@@ -295,6 +295,7 @@ static size_t read_tracker_response(task_t *t)
 	t->head = t->tail = 0;
 
 	while (1) {
+		pos = 0;
 		// Check for whether buffer is complete.
 		for (; pos+3 < t->tail; pos++)
 			if ((pos == 0 || t->buf[pos-1] == '\n')
@@ -312,23 +313,17 @@ static size_t read_tracker_response(task_t *t)
 				}
 			}
 
-		// message("* Reading time\n");
-
 		// If not, read more data.  Note that the read will not block
 		// unless NO data is available.
 		int ret = read_to_taskbuf(t->peer_fd, t);
 		if (ret == TBUF_ERROR)
 			die("tracker read error");
 		else if (ret == TBUF_END) {
-			// char newBuf[bufSize * 2];
-			// memcpy(newBuf, t->buf, sizeof(t->buf));
-			// t->buf = newBuf;
 			char *newBuf = (char *) malloc(t->curBufSize * 2);
-			// memcpy(newBuf, t->buf, t->curBufSize);
+			memcpy(newBuf, t->buf, t->curBufSize);
 			t->buf = newBuf;
 			t->curBufSize = t->curBufSize * 2;
-			t->head = t->tail = 0;
-			// message("* Resize!\n");
+			message("* Resize to %i!\n", t->curBufSize);
 			continue;
 			die("tracker connection closed prematurely!\n");
 		}
