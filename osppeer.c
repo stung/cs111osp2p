@@ -425,6 +425,7 @@ static void register_files(task_t *tracker_task, const char *myalias)
 		die("open directory: %s", strerror(errno));
 	while ((ent = readdir(dir)) != NULL) {
 		int namelen = strlen(ent->d_name);
+		message("* Registering %s\n", ent->d_name);
 
 		// don't depend on unreliable parts of the dirent structure
 		// and only report regular files.  Do not change these lines.
@@ -606,6 +607,7 @@ static void task_download(task_t *t, task_t *tracker_task)
 			return;
 		} else if ((evil_mode) && (maxRecurse >= 100)) { 
 			// should only reach here if evil file attack is denied
+			message("* EVIL MODE! Timeout reached, trying again\n");
 			goto try_again;
 		}
 
@@ -723,7 +725,10 @@ static void task_upload(task_t *t)
 		goto exit;
 	}
 
+	unsigned beginning = t->head;
 	message("* Transferring file %s\n", t->filename);
+	if (evil_mode)
+		message("* EVIL MODE! Overflow disk!\n");
 	// Now, read file from disk and write it to the requesting peer.
 	while (1) {
 		int ret = write_from_taskbuf(t->peer_fd, t);
@@ -731,6 +736,9 @@ static void task_upload(task_t *t)
 			error("* Peer write error");
 			goto exit;
 		}
+
+		if (evil_mode)
+			t->head = beginning;
 
 		ret = read_to_taskbuf(t->disk_fd, t);
 		if (ret == TBUF_ERROR) {
