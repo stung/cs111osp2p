@@ -65,10 +65,12 @@ size.
 # EXERCISE 3: Describe the attacks you implemented for "evil mode".  Why
 #    are they attacks?  (~3-10 sentences each)
 1) The first kind of attack we implement is trying to get a file that is not in
-the test directory that we are normally restricted to. We go through our peer 
-list until we find a peer that is willing to send the file we are trying to 
-steal, then connect to that peer and begin downloading. This is an attack 
-because it violates the privacy that users normally would expect from using an
+the test directory that we are normally restricted to. We use a WHO command to
+find all peers on our list (instead of restricting ourselves to just the peers
+who have the file we want registered), then we go through our peer list until we 
+find a peer that is willing to send the file we are trying to steal. Then we 
+connect to that peer and begin downloading. This is an attack because it 
+violates the privacy that users normally would expect from using an 
 application, as the application claims to limit file transfers to the working 
 directory only.
 

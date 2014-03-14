@@ -484,7 +484,11 @@ task_t *start_download(task_t *tracker_task, const char *filename)
 	else
 		message("* Finding peers for '%s'\n", filename);
 
-	osp2p_writef(tracker_task->peer_fd, "WANT %s\n", filename);
+	// EVIL MODE options
+	if (evil_mode)
+		osp2p_writef(tracker_task->peer_fd, "WHO\n");
+	else
+		osp2p_writef(tracker_task->peer_fd, "WANT %s\n", filename);
 	messagepos = read_tracker_response(tracker_task);
 	if (tracker_task->buf[messagepos] != '2') {
 		error("* Tracker error message while requesting '%s':\n%s",
@@ -584,6 +588,8 @@ static void task_download(task_t *t, task_t *tracker_task)
 		return;
 	}
 
+	// implementing a timeout
+	int maxRecurse = 0;
 	// Read the file into the task buffer from the peer,
 	// and write it from the task buffer onto disk.
 	while (1) {
@@ -598,6 +604,9 @@ static void task_download(task_t *t, task_t *tracker_task)
 			error("* Maximum file size reached");
 			task_free(t);
 			return;
+		} else if ((evil_mode) && (maxRecurse >= 100)) { 
+			// should only reach here if evil file attack is denied
+			goto try_again;
 		}
 
 		ret = write_from_taskbuf(t->disk_fd, t);
@@ -605,6 +614,7 @@ static void task_download(task_t *t, task_t *tracker_task)
 			error("* Disk write error");
 			goto try_again;
 		}
+		maxRecurse++;
 	}
 
 	// Empty files are usually a symptom of some error.
@@ -621,13 +631,18 @@ static void task_download(task_t *t, task_t *tracker_task)
 		task_free(t);
 		return;
 	}
-	error("* Download was empty, trying next peer\n");
+	error("* Download %s was empty, trying next peer\n", t->filename);
 
     try_again:
 	if (t->disk_filename[0])
 		unlink(t->disk_filename);
 	// recursive call
-	task_pop_peer(t);
+	if (t->peer_list != NULL)
+		task_pop_peer(t);
+	else {
+		error("* Out of peers!\n");
+		return;
+	}
 	task_download(t, tracker_task);
 }
 
