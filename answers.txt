@@ -58,8 +58,8 @@ strncpy on the destination size.
 
 3) Dynamically resizing the task buffer size if the TASKBUFSIZ is exceeded.
 This bug fix involved changing the buffer from a fixed char size to a char 
-pointer, and adding a new data member that kept track of the current buffer
-size.
+pointer to a buffer, and adding a new data member that kept track of the current 
+buffer size. This primarily allowed us to connect to the popular tracker.
 
 
 # EXERCISE 3: Describe the attacks you implemented for "evil mode".  Why
@@ -73,6 +73,13 @@ connect to that peer and begin downloading. This is an attack because it
 violates the privacy that users normally would expect from using an 
 application, as the application claims to limit file transfers to the working 
 directory only.
+
+2) The second kind of attack we implement is an infinite file size attack. When
+anyone tries to request a file from us when we are in evil mode, we will 
+repeatedly reset our file pointer and write to the buffer over and over again.
+If there is no defense in place, this will continue until the user's disk space
+is full. This is an attack because no one likes to receive a 200GB file when 
+they were expecting a 3KB cat image.
 
 
 # Extra credit problems
